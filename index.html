@@ -341,6 +341,7 @@ input[type=number]::-webkit-inner-spin-button,input[type=number]::-webkit-outer-
 <div class="mb-2"><input oninput="filterProducts(this.value)" placeholder="Поиск продуктов..." class="w-full px-3 py-2.5 rounded-xl border border-gray-300"></div>
 <div id="products-list" class="grid grid-cols-1 md:grid-cols-2 gap-2"></div>
 </div>
+
 <div id="section-recipes" class="section">
 <div class="mb-4">
 <h2 class="text-lg font-bold">Рецепты</h2>
@@ -663,6 +664,434 @@ function updatePlanTargets(){
   document.getElementById('plan-norm-fats').textContent=norm.fats;
   document.getElementById('plan-norm-carbs').textContent=norm.carbs;
 }
+
+function generateMenu(){
+  if(!products.length&&!recipes.length){alert('Добавьте продукты или рецепты для генерации');return}
+  let pool=[...products.map(p=>({...p,type:'product',orig:p})),...recipes.map(r=>({...r,type:'recipe',orig:r}))];
+  if(!pool.length){alert('Добавьте продукты или рецепты');return}
+  let targets={
+    breakfast:{cals:norm.cals*0.30,prot:norm.prot*0.30,fats:norm.fats*0.25,carbs:norm.carbs*0.35},
+    lunch:{cals:norm.cals*0.35,prot:norm.prot*0.35,fats:norm.fats*0.35,carbs:norm.carbs*0.35},
+    dinner:{cals:norm.cals*0.25,prot:norm.prot*0.25,fats:norm.fats*0.30,carbs:norm.carbs*0.20},
+    snack:{cals:norm.cals*0.10,prot:norm.prot*0.10,fats:norm.fats*0.10,carbs:norm.carbs*0.10}
+  };
+  let plan={breakfast:[],lunch:[],dinner:[],snack:[]};
+  let used=new Set();
+  for(let meal in targets){
+    let t=targets[meal];
+    let remaining={...t};
+    let attempts=0;
+    while((remaining.cals>50||remaining.prot>5)&&attempts<30){
+      attempts++;
+      let candidates=pool.filter(x=>!used.has(x.id+'_'+x.type));
+      if(!candidates.length)break;
+      let best=null,bestScore=Infinity;
+      for(let c of candidates){
+        let score=Math.abs(c.cals-remaining.cals*0.6)+Math.abs(c.p-remaining.prot*0.5)*10;
+        if(score<bestScore){bestScore=score;best=c;}
+      }
+      if(!best)break;
+      let weight=100;
+      if(best.cals>remaining.cals*1.3)weight=Math.round(remaining.cals/best.cals*100);
+      if(weight<30)weight=30;
+      let factor=weight/100;
+      let item={
+        id:best.id,type:best.type,name:best.name,
+        weight:weight,
+        cals:Math.round(best.cals*factor),
+        prot:Math.round(best.p*factor*10)/10,
+        fats:Math.round(best.f*factor*10)/10,
+        carbs:Math.round(best.c*factor*10)/10
+      };
+      if(best.type==='recipe'){
+        item.cals=Math.round(best.cals*factor);
+        item.prot=Math.round(best.prot*factor*10)/10;
+        item.fats=Math.round(best.fats*factor*10)/10;
+        item.carbs=Math.round(best.carbs*factor*10)/10;
+      }
+      plan[meal].push(item);
+      used.add(best.id+'_'+best.type);
+      remaining.cals-=item.cals;
+      remaining.prot-=item.prot;
+      remaining.fats-=item.fats;
+      remaining.carbs-=item.carbs;
+    }
+  }
+  currentPlan=plan;
+  renderPlan(plan);
+  document.getElementById('btn-add-plan').classList.remove('hidden');
+}
+
+function renderPlan(plan){
+  let meals={breakfast:'Завтрак',lunch:'Обед',dinner:'Ужин',snack:'Перекус'};
+  let icons={breakfast:'fa-coffee',lunch:'fa-hamburger',dinner:'fa-utensils',snack:'fa-cookie-bite'};
+  let html='';
+  let total={cals:0,prot:0,fats:0,carbs:0};
+  for(let m in meals){
+    let items=plan[m];
+    let mc=items.reduce((s,i)=>s+i.cals,0);
+    let mp=items.reduce((s,i)=>s+i.prot,0);
+    let mf=items.reduce((s,i)=>s+i.fats,0);
+    let mcb=items.reduce((s,i)=>s+i.carbs,0);
+    total.cals+=mc;total.prot+=mp;total.fats+=mf;total.carbs+=mcb;
+    html+='<div class="glass rounded-2xl p-3.5">'+
+      '<div class="flex items-center gap-2 mb-2"><div class="w-7 h-7 rounded-lg flex items-center justify-center text-white text-xs" style="background:linear-gradient(135deg,#667eea,#764ba2)"><i class="fas '+icons[m]+'"></i></div><h4 class="font-bold text-sm">'+meals[m]+'</h4><span class="text-xs text-gray-500 ml-auto">'+Math.round(mc)+' ккал</span></div>';
+    if(items.length){
+      html+=items.map(it=>'<div class="flex justify-between items-center py-1.5 border-b border-gray-100">'+
+        '<div><p class="text-sm font-medium">'+it.name+'</p><p class="text-xs text-gray-400">'+it.weight+'г</p></div>'+
+        '<div class="text-right"><p class="text-sm font-medium">'+it.cals+' ккал</p><p class="text-xs text-gray-400">Б:'+it.prot+' Ж:'+it.fats+' У:'+it.carbs+'</p></div>'+
+        '</div>').join('');
+    }else{
+      html+='<p class="text-gray-400 text-sm">Нет подходящих блюд</p>';
+    }
+    html+='<div class="mt-1.5 flex gap-2 text-xs text-gray-500"><span>Б: '+Math.round(mp*10)/10+'г</span><span>Ж: '+Math.round(mf*10)/10+'г</span><span>У: '+Math.round(mcb*10)/10+'г</span></div>';
+    html+='</div>';
+  }
+  document.getElementById('planner-result').innerHTML=html;
+  document.getElementById('plan-cals').textContent=Math.round(total.cals);
+  document.getElementById('plan-prot').textContent=Math.round(total.prot);
+  document.getElementById('plan-fats').textContent=Math.round(total.fats);
+  document.getElementById('plan-carbs').textContent=Math.round(total.carbs);
+  let pc=Math.min(total.cals/norm.cals*100,100);
+  let pp=Math.min(total.prot/norm.prot*100,100);
+  let pf=Math.min(total.fats/norm.fats*100,100);
+  let pcb=Math.min(total.carbs/norm.carbs*100,100);
+  document.getElementById('plan-ring').style.strokeDashoffset=226-(226*pc/100);
+  document.getElementById('plan-bar-prot').style.width=pp+'%';
+  document.getElementById('plan-bar-fats').style.width=pf+'%';
+  document.getElementById('plan-bar-carbs').style.width=pcb+'%';
+}
+
+function addPlanToDiary(){
+  if(!currentPlan)return;
+  let today=new Date().toISOString().split('T')[0];
+  if(!diary[today])diary[today]={entries:[]};
+  for(let meal in currentPlan){
+    currentPlan[meal].forEach(item=>{
+      diary[today].entries.push({
+        name:item.name,cals:item.cals,prot:item.prot,fats:item.fats,carbs:item.carbs,
+        meal:meal,weight:item.weight,time:new Date().toLocaleTimeString('ru-RU',{hour:'2-digit',minute:'2-digit'})
+      });
+    });
+  }
+  saveData();
+  renderDiary();
+  updateDashboard();
+  alert('Меню добавлено в дневник!');
+  showSection('diary');
+}
+
+function addProduct(){
+  let name=document.getElementById('prod-name').value.trim();
+  let cals=+document.getElementById('prod-cals').value;
+  let p=+document.getElementById('prot').value;
+  let f=+document.getElementById('prod-fats').value;
+  let c=+document.getElementById('prod-carbs').value;
+  if(!name||!cals){alert('Введите название и калории');return}
+  products.push({id:Date.now(),name,cals,p,f,c});
+  saveData();
+  renderProducts();
+  document.getElementById('prod-name').value='';
+  document.getElementById('prod-cals').value='';
+  document.getElementById('prot').value='';
+  document.getElementById('prod-fats').value='';
+  document.getElementById('prod-carbs').value='';
+  updateDiarySelect();
+}
+
+function renderProducts(list){
+  if(!list)list=products;
+  let html=list.map(pr=>'<div class="glass rounded-xl p-3 flex justify-between items-center">'+
+    '<div class="min-w-0"><p class="font-medium text-sm truncate">'+pr.name+'</p><p class="text-xs text-gray-500">'+pr.cals+' ккал | Б:'+pr.p+' Ж:'+pr.f+' У:'+pr.c+'</p></div>'+
+    '<button onclick="deleteProduct('+pr.id+')" class="text-red-500 hover:text-red-700 p-2 btn-touch shrink-0 ml-2"><i class="fas fa-trash text-sm"></i></button>'+
+    '</div>').join('');
+  document.getElementById('products-list').innerHTML=html||'<p class="text-gray-400 text-center py-6 text-sm">Нет продуктов</p>';
+}
+
+function filterProducts(q){
+  renderProducts(products.filter(p=>p.name.toLowerCase().includes(q.toLowerCase())));
+}
+
+function deleteProduct(id){
+  products=products.filter(p=>p.id!==id);
+  saveData();
+  renderProducts();
+  updateDiarySelect();
+}
+
+function addIngredient(){
+  let name=document.getElementById('ing-name').value.trim();
+  let w=+document.getElementById('ing-weight').value;
+  let cals=+document.getElementById('ing-cals').value;
+  let p=+document.getElementById('ing-prot').value;
+  let f=+document.getElementById('ing-fats').value;
+  let c=+document.getElementById('ing-carbs').value;
+  if(!name||!w){alert('Введите название и вес ингредиента');return}
+  currentRecipeIngredients.push({name,weight:w||0,cals:cals||0,prot:p||0,fats:f||0,carbs:c||0});
+  renderRecipeIngredients();
+  document.getElementById('ing-name').value='';
+  document.getElementById('ing-weight').value='';
+  document.getElementById('ing-cals').value='';
+  document.getElementById('ing-prot').value='';
+  document.getElementById('ing-fats').value='';
+  document.getElementById('ing-carbs').value='';
+}
+
+function renderRecipeIngredients(){
+  let html=currentRecipeIngredients.map((ing,i)=>'<div class="ingredient-row flex justify-between items-center">'+
+    '<div class="min-w-0"><p class="text-sm font-medium">'+ing.name+'</p><p class="text-xs text-gray-500">'+ing.weight+'г &middot; '+ing.cals+' ккал &middot; Б:'+ing.prot+'г Ж:'+ing.fats+'г У:'+ing.carbs+'г</p></div>'+
+    '<button onclick="removeIngredient('+i+')" class="text-red-500 p-1.5 btn-touch shrink-0 ml-2"><i class="fas fa-times text-sm"></i></button>'+
+    '</div>').join('');
+  document.getElementById('recipe-ingredients').innerHTML=html;
+  let portion=+document.getElementById('recipe-portion').value||300;
+  let totalWeight=currentRecipeIngredients.reduce((s,i)=>s+i.weight,0);
+  if(totalWeight===0)totalWeight=portion;
+  let tc=currentRecipeIngredients.reduce((s,i)=>s+i.cals,0);
+  let tp=currentRecipeIngredients.reduce((s,i)=>s+i.prot,0);
+  let tf=currentRecipeIngredients.reduce((s,i)=>s+i.fats,0);
+  let tcb=currentRecipeIngredients.reduce((s,i)=>s+i.carbs,0);
+  let k=portion/totalWeight;
+  document.getElementById('rec-cals').textContent=Math.round(tc*k);
+  document.getElementById('rec-prot').textContent=Math.round(tp*k*10)/10;
+  document.getElementById('rec-fats').textContent=Math.round(tf*k*10)/10;
+  document.getElementById('rec-carbs').textContent=Math.round(tcb*k*10)/10;
+  document.getElementById('rec-portion').textContent=portion;
+}
+
+function removeIngredient(i){
+  currentRecipeIngredients.splice(i,1);
+  renderRecipeIngredients();
+}
+
+function addStep(){
+  let text=document.getElementById('step-text').value.trim();
+  if(!text){alert('Введите описание шага');return}
+  currentRecipeSteps.push(text);
+  renderRecipeSteps();
+  document.getElementById('step-text').value='';
+}
+
+function renderRecipeSteps(){
+  let html=currentRecipeSteps.map((step,i)=>'<div class="recipe-step text-sm text-gray-700" data-step="'+(i+1)+'">'+step+'</div>').join('');
+  document.getElementById('recipe-steps').innerHTML=html;
+}
+
+function removeStep(i){
+  currentRecipeSteps.splice(i,1);
+  renderRecipeSteps();
+}
+
+function saveRecipe(){
+  let name=document.getElementById('recipe-name').value.trim();
+  let category=document.getElementById('recipe-category').value;
+  let portion=+document.getElementById('recipe-portion').value||300;
+  if(!name){alert('Введите название рецепта');return}
+  if(!currentRecipeIngredients.length){alert('Добавьте хотя бы один ингредиент');return}
+  let totalWeight=currentRecipeIngredients.reduce((s,i)=>s+i.weight,0);
+  if(totalWeight===0)totalWeight=portion;
+  let tc=currentRecipeIngredients.reduce((s,i)=>s+i.cals,0);
+  let tp=currentRecipeIngredients.reduce((s,i)=>s+i.prot,0);
+  let tf=currentRecipeIngredients.reduce((s,i)=>s+i.fats,0);
+  let tcb=currentRecipeIngredients.reduce((s,i)=>s+i.carbs,0);
+  let k=portion/totalWeight;
+  let recipe={
+    id:Date.now(),name,category,portion,
+    ingredients:[...currentRecipeIngredients],
+    steps:[...currentRecipeSteps],
+    cals:Math.round(tc*k),prot:Math.round(tp*k*10)/10,fats:Math.round(tf*k*10)/10,carbs:Math.round(tcb*k*10)/10
+  };
+  recipes.push(recipe);
+  let per100k=portion>0?tc*k/portion*100:0;
+  let per100p=portion>0?tp*k/portion*100:0;
+  let per100f=portion>0?tf*k/portion*100:0;
+  let per100c=portion>0?tcb*k/portion*100:0;
+  products.push({id:Date.now()+1,name:name+' (рецепт)',cals:Math.round(per100k),p:Math.round(per100p*10)/10,f:Math.round(per100f*10)/10,c:Math.round(per100c*10)/10});
+  saveData();
+  renderRecipes();
+  renderProducts();
+  currentRecipeIngredients=[];
+  currentRecipeSteps=[];
+  document.getElementById('recipe-name').value='';
+  document.getElementById('recipe-portion').value='300';
+  document.getElementById('recipe-ingredients').innerHTML='';
+  document.getElementById('recipe-steps').innerHTML='';
+  document.getElementById('rec-cals').textContent='0';
+  document.getElementById('rec-prot').textContent='0';
+  document.getElementById('rec-fats').textContent='0';
+  document.getElementById('rec-carbs').textContent='0';
+  updateDiarySelect();
+}
+
+function renderRecipes(){
+  let cats={breakfast:'Завтрак',lunch:'Обед',dinner:'Ужин',snack:'Перекус',other:'Другое'};
+  let catColors={breakfast:'bg-yellow-100 text-yellow-700',lunch:'bg-orange-100 text-orange-700',dinner:'bg-indigo-100 text-indigo-700',snack:'bg-pink-100 text-pink-700',other:'bg-gray-100 text-gray-700'};
+  let html=recipes.map(r=>'<div class="glass rounded-xl p-3">'+
+    '<div class="flex justify-between items-start mb-1.5">'+
+      '<div class="min-w-0">'+
+        '<h4 class="font-bold text-sm truncate">'+r.name+'</h4>'+
+        '<span class="inline-block mt-0.5 px-2 py-0.5 rounded-md text-xs font-medium '+catColors[r.category]+'">'+cats[r.category]+'</span>'+
+      '</div>'+
+      '<button onclick="deleteRecipe('+r.id+')" class="text-red-500 hover:text-red-700 p-1.5 btn-touch shrink-0 ml-2"><i class="fas fa-trash text-sm"></i></button>'+
+    '</div>'+
+    '<p class="text-xs text-gray-500 mb-1">'+r.cals+' ккал | Б:'+r.prot+' Ж:'+r.fats+' У:'+r.carbs+' на '+r.portion+'г</p>'+
+    '<p class="text-xs text-gray-400">'+r.ingredients.length+' ингр. &middot; '+r.steps.length+' шагов</p>'+
+    '</div>').join('');
+  document.getElementById('recipes-list').innerHTML=html||'<p class="text-gray-400 text-center py-6 text-sm">Нет рецептов</p>';
+}
+
+function deleteRecipe(id){
+  let r=recipes.find(x=>x.id===id);
+  if(r){
+    products=products.filter(p=>p.name!==r.name+' (рецепт)');
+  }
+  recipes=recipes.filter(r=>r.id!==id);
+  saveData();
+  renderRecipes();
+  renderProducts();
+  updateDiarySelect();
+}
+
+function updateDiarySelect(){
+  let s=document.getElementById('diary-select');
+  let opts=products.map(p=>'<option value="p_'+p.id+'">'+p.name+'</option>');
+  opts=opts.concat(recipes.map(r=>'<option value="r_'+r.id+'">'+r.name+' (рецепт)</option>'));
+  s.innerHTML=opts.join('');
+}
+
+function addToDiary(){
+  let val=document.getElementById('diary-select').value;
+  let w=+document.getElementById('diary-weight').value;
+  let meal=document.getElementById('diary-meal').value;
+  if(!val||!w){alert('Выберите продукт/рецепт и введите вес');return}
+  let item;
+  if(val.startsWith('p_')){
+    let p=products.find(x=>x.id===+val.split('_')[1]);
+    item={name:p.name,cals:p.cals*w/100,prot:p.p*w/100,fats:p.f*w/100,carbs:p.c*w/100};
+  }else{
+    let r=recipes.find(x=>x.id===+val.split('_')[1]);
+    let k=w/100;
+    item={name:r.name,cals:r.cals*k,prot:r.prot*k,fats:r.fats*k,carbs:r.carbs*k};
+  }
+  let today=new Date().toISOString().split('T')[0];
+  if(!diary[today])diary[today]={entries:[]};
+  diary[today].entries.push({...item,meal,weight:w,time:new Date().toLocaleTimeString('ru-RU',{hour:'2-digit',minute:'2-digit'})});
+  saveData();
+  renderDiary();
+  updateDashboard();
+  document.getElementById('diary-weight').value='';
+}
+
+function renderDiary(){
+  let today=new Date().toISOString().split('T')[0];
+  let day=diary[today]||{entries:[]};
+  let meals={breakfast:'Завтрак',lunch:'Обед',dinner:'Ужин',snack:'Перекус'};
+  let byMeal={};
+  day.entries.forEach(e=>{if(!byMeal[e.meal])byMeal[e.meal]=[];byMeal[e.meal].push(e)});
+  let html='';
+  for(let m in meals){
+    let items=byMeal[m]||[];
+    let mc=items.reduce((s,i)=>s+i.cals,0);
+    html+='<div class="glass rounded-2xl p-3.5">'+
+      '<div class="flex justify-between items-center mb-1.5"><h4 class="font-bold text-sm">'+meals[m]+'</h4><span class="text-xs font-medium">'+Math.round(mc)+' ккал</span></div>';
+    if(items.length){
+      html+=items.map((e,i)=>'<div class="flex justify-between items-center py-1.5 border-b border-gray-100">'+
+        '<div class="min-w-0"><p class="text-sm truncate">'+e.name+' ('+e.weight+'г)</p><p class="text-xs text-gray-400">'+e.time+'</p></div>'+
+        '<div class="text-right shrink-0 ml-2"><p class="text-sm font-medium">'+Math.round(e.cals)+' ккал</p><p class="text-xs text-gray-400">Б:'+Math.round(e.prot)+' Ж:'+Math.round(e.fats)+' У:'+Math.round(e.carbs)+'</p></div>'+
+        '</div>').join('');
+    }else{
+      html+='<p class="text-gray-400 text-sm">Нет записей</p>';
+    }
+    html+='</div>';
+  }
+  document.getElementById('diary-entries').innerHTML=html;
+  let tc=day.entries.reduce((s,e)=>s+e.cals,0);
+  let tp=day.entries.reduce((s,e)=>s+e.prot,0);
+  let tf=day.entries.reduce((s,e)=>s+e.fats,0);
+  let tcb=day.entries.reduce((s,e)=>s+e.carbs,0);
+  document.getElementById('diary-total-cals').textContent=Math.round(tc);
+  document.getElementById('diary-total-prot').textContent=Math.round(tp);
+  document.getElementById('diary-total-fats').textContent=Math.round(tf);
+  document.getElementById('diary-total-carbs').textContent=Math.round(tcb);
+  document.getElementById('diary-norm-cals').textContent=norm.cals;
+  document.getElementById('diary-norm-prot').textContent=norm.prot;
+  document.getElementById('diary-norm-fats').textContent=norm.fats;
+  document.getElementById('diary-norm-carbs').textContent=norm.carbs;
+  let pc=Math.min(tc/norm.cals*100,100);
+  let pp=Math.min(tp/norm.prot*100,100);
+  let pf=Math.min(tf/norm.fats*100,100);
+  let pcb=Math.min(tcb/norm.carbs*100,100);
+  document.getElementById('diary-bar-prot').style.width=pp+'%';
+  document.getElementById('diary-bar-fats').style.width=pf+'%';
+  document.getElementById('diary-bar-carbs').style.width=pcb+'%';
+  document.getElementById('diary-ring').style.strokeDashoffset=251-(251*pc/100);
+}
+
+function updateDashboard(){
+  let today=new Date().toISOString().split('T')[0];
+  let day=diary[today]||{entries:[]};
+  let tc=Math.round(day.entries.reduce((s,e)=>s+e.cals,0));
+  let tp=Math.round(day.entries.reduce((s,e)=>s+e.prot,0));
+  let tf=Math.round(day.entries.reduce((s,e)=>s+e.fats,0));
+  let tcb=Math.round(day.entries.reduce((s,e)=>s+e.carbs,0));
+  document.getElementById('dash-cals').textContent=tc;
+  document.getElementById('dash-prot').textContent=tp;
+  document.getElementById('dash-fats').textContent=tf;
+  document.getElementById('dash-carbs').textContent=tcb;
+  document.getElementById('dash-cals-diff').textContent='из '+norm.cals;
+  document.getElementById('dash-prot-diff').textContent='из '+norm.prot;
+  document.getElementById('dash-fats-diff').textContent='из '+norm.fats;
+  document.getElementById('dash-carbs-diff').textContent='из '+norm.carbs;
+  document.getElementById('center-cals').textContent=tc;
+  document.getElementById('bar-cals').style.width=Math.min(tc/norm.cals*100,100)+'%';
+  document.getElementById('bar-prot').style.width=Math.min(tp/norm.prot*100,100)+'%';
+  document.getElementById('bar-fats').style.width=Math.min(tf/norm.fats*100,100)+'%';
+  document.getElementById('bar-carbs').style.width=Math.min(tcb/norm.carbs*100,100)+'%';
+  let rp=Math.min(tp/norm.prot,1);
+  let rf=Math.min(tf/norm.fats,1);
+  let rc=Math.min(tcb/norm.carbs,1);
+  document.getElementById('ring-prot').style.strokeDashoffset=402-(402*rp);
+  document.getElementById('ring-fats').style.strokeDashoffset=301-(301*rf);
+  document.getElementById('ring-carbs').style.strokeDashoffset=201-(201*rc);
+  let dc=Math.round((tc/norm.cals-1)*100);
+  let dp=Math.round((tp/norm.prot-1)*100);
+  let df=Math.round((tf/norm.fats-1)*100);
+  let dcb=Math.round((tcb/norm.carbs-1)*100);
+  document.getElementById('dev-cals').textContent=(dc>0?'+':'')+dc+'%';
+  document.getElementById('dev-prot').textContent=(dp>0?'+':'')+dp+'%';
+  document.getElementById('dev-fats').textContent=(df>0?'+':'')+df+'%';
+  document.getElementById('dev-carbs').textContent=(dcb>0?'+':'')+dcb+'%';
+  document.getElementById('dev-bar-cals').style.width=Math.min(Math.abs(dc),100)+'%';
+  document.getElementById('dev-bar-cals').style.background=dc>0?'#ef4444':'#10b981';
+  document.getElementById('dev-bar-prot').style.width=Math.min(Math.abs(dp),100)+'%';
+  document.getElementById('dev-bar-prot').style.background=dp>0?'#ef4444':'#10b981';
+  document.getElementById('dev-bar-fats').style.width=Math.min(Math.abs(df),100)+'%';
+  document.getElementById('dev-bar-fats').style.background=df>0?'#ef4444':'#10b981';
+  document.getElementById('dev-bar-carbs').style.width=Math.min(Math.abs(dcb),100)+'%';
+  document.getElementById('dev-bar-carbs').style.background=dcb>0?'#ef4444':'#10b981';
+  document.getElementById('dev-text-cals').textContent=dc>10?'Превышение нормы':dc<-10?'Недобор':'В пределах нормы';
+  document.getElementById('dev-text-prot').textContent=dp>10?'Превышение нормы':dp<-10?'Недобор':'В пределах нормы';
+  document.getElementById('dev-text-fats').textContent=df>10?'Превышение нормы':df<-10?'Недобор':'В пределах нормы';
+  document.getElementById('dev-text-carbs').textContent=dcb>10?'Превышение нормы':dcb<-10?'Недобор':'В пределах нормы';
+  let hist='';
+  let dates=[];
+  for(let i=6;i>=0;i--){
+    let d=new Date();d.setDate(d.getDate()-i);
+    dates.push(d.toISOString().split('T')[0]);
+  }
+  dates.forEach(date=>{
+    let dday=diary[date]||{entries:[]};
+    let c=Math.round(dday.entries.reduce((s,e)=>s+e.cals,0));
+    let p=Math.round(dday.entries.reduce((s,e)=>s+e.prot,0));
+    let f=Math.round(dday.entries.reduce((s,e)=>s+e.fats,0));
+    let cb=Math.round(dday.entries.reduce((s,e)=>s+e.carbs,0));
+    let status=c>norm.cals*1.1?'Превышение':c<norm.cals*0.9?'Недобор':'OK';
+    let statusColor=status==='OK'?'text-green-500':'text-red-500';
+    let d=new Date(date);
+    hist+='<tr class="text-xs"><td class="py-1.5">'+d.toLocaleDateString('ru-RU',{day:'numeric',month:'short'})+'</td><td class="py-1.5">'+c+'</td><td class="py-1.5">'+p+'</td><td class="py-1.5">'+f+'</td><td class="py-1.5">'+cb+'</td><td class="py-1.5 '+statusColor+'">'+status+'</td></tr>';
+  });
+  document.getElementById('history-table').innerHTML=hist;
+}
+
 function exportData(){
   let data={products,recipes,diary,norm,mode,exportDate:new Date().toISOString()};
   let blob=new Blob([JSON.stringify(data,null,2)],{type:'application/json'});
