@@ -2,8 +2,6 @@
   "name": "Калькулятор КБЖУ",
   "short_name": "КБЖУ",
   "description": "Умный подсчет калорий, планировщик меню, режим сушки",
-  "start_url": "./",
-  "scope": "./",
   "display": "standalone",
   "background_color": "#667eea",
   "theme_color": "#667eea",
