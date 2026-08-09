@@ -1,0 +1,1137 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="КБЖУ">
+<meta name="theme-color" content="#667eea">
+<meta name="mobile-web-app-capable" content="yes">
+<link rel="manifest" href="manifest.json">
+<link rel="apple-touch-icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 180 180'%3E%3Crect width='180' height='180' rx='40' fill='url(%23g)'/%3E%3Cdefs%3E%3ClinearGradient id='g' x1='0%25' y1='0%25' x2='100%25' y2='100%25'%3E%3Cstop offset='0%25' stop-color='%23667eea'/%3E%3Cstop offset='100%25' stop-color='%23764ba2'/%3E%3C/linearGradient%3E%3C/defs%3E%3Ctext x='90' y='115' font-size='90' text-anchor='middle' fill='white'%3E%F0%9F%8D%8E%3C/text%3E%3C/svg%3E">
+<title>Калькулятор КБЖУ</title>
+<script src="https://cdn.tailwindcss.com"></script>
+<link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+<style>
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent;-webkit-touch-callout:none;touch-action:manipulation}
+html,body{font-family:Inter,-apple-system,BlinkMacSystemFont,sans-serif;background:linear-gradient(135deg,#667eea 0%,#764ba2 100%);min-height:100dvh;-webkit-font-smoothing:antialiased;overscroll-behavior-y:none;margin:0;padding:0}
+.glass{background:rgba(255,255,255,.96);backdrop-filter:blur(20px);-webkit-backdrop-filter:blur(20px);border:1px solid rgba(255,255,255,.25)}
+.nav-item.active{background:linear-gradient(135deg,#667eea,#764ba2);color:#fff}
+.progress-ring{transform:rotate(-90deg)}
+.macro-bar{transition:width .5s ease}
+.section{display:none}
+.section.active{display:block}
+input,select,textarea,button{font-size:16px!important;border-radius:12px!important}
+input[type=number]::-webkit-inner-spin-button,input[type=number]::-webkit-outer-spin-button{-webkit-appearance:none;margin:0}
+.btn-touch{min-height:44px;min-width:44px}
+.ios-btn:active{opacity:.7;transform:scale(.97)}
+.safe-top{padding-top:max(16px,env(safe-area-inset-top))}
+.safe-bottom{padding-bottom:max(16px,env(safe-area-inset-bottom))}
+.safe-left{padding-left:max(16px,env(safe-area-inset-left))}
+.safe-right{padding-right:max(16px,env(safe-area-inset-right))}
+.sidebar-fix{height:100dvh;overflow-y:auto}
+.main-fix{height:100dvh;overflow-y:auto}
+@media(max-width:1023px){.sidebar-fix{height:auto;min-height:auto}.main-fix{height:auto;min-height:auto}}
+.recipe-step{position:relative;padding-left:28px;margin-bottom:8px}
+.recipe-step::before{content:attr(data-step);position:absolute;left:0;top:0;width:22px;height:22px;border-radius:50%;background:linear-gradient(135deg,#667eea,#764ba2);color:#fff;font-size:11px;display:flex;align-items:center;justify-content:center;font-weight:700}
+.ingredient-row{background:#f8fafc;border-radius:10px;padding:10px 12px;margin-bottom:6px}
+</style>
+</head>
+<body class="text-gray-800">
+<div class="min-h-[100dvh] p-3 sm:p-4 safe-top safe-bottom safe-left safe-right">
+<div class="max-w-7xl mx-auto h-[calc(100dvh-24px)] sm:h-[calc(100dvh-32px)]">
+<div class="glass rounded-3xl shadow-2xl overflow-hidden h-full">
+<div class="flex flex-col lg:flex-row h-full">
+
+<aside class="lg:w-64 bg-gray-50/80 border-r border-gray-200 flex flex-col shrink-0 sidebar-fix">
+<div class="p-4 lg:p-5 flex-1">
+<div class="flex items-center gap-3 mb-5">
+<div class="w-9 h-9 rounded-xl flex items-center justify-center text-white shrink-0" style="background:linear-gradient(135deg,#667eea,#764ba2)">
+<i class="fas fa-calculator text-sm"></i>
+</div>
+<div>
+<h1 class="font-bold text-sm leading-tight">Калькулятор</h1>
+<p class="text-xs text-gray-500">КБЖУ</p>
+</div>
+</div>
+<nav class="space-y-1">
+<button onclick="showSection('dashboard')" class="nav-item active w-full text-left px-3 py-2.5 rounded-xl flex items-center gap-2.5 btn-touch ios-btn" id="nav-dashboard">
+<i class="fas fa-chart-pie w-4 text-center text-sm"></i><span class="text-sm font-medium">Дашборд</span>
+</button>
+<button onclick="showSection('norm')" class="nav-item w-full text-left px-3 py-2.5 rounded-xl flex items-center gap-2.5 text-gray-600 btn-touch ios-btn" id="nav-norm">
+<i class="fas fa-bullseye w-4 text-center text-sm"></i><span class="text-sm font-medium">Моя норма</span>
+</button>
+<button onclick="showSection('planner')" class="nav-item w-full text-left px-3 py-2.5 rounded-xl flex items-center gap-2.5 text-gray-600 btn-touch ios-btn" id="nav-planner">
+<i class="fas fa-magic w-4 text-center text-sm"></i><span class="text-sm font-medium">Планировщик</span>
+</button>
+<button onclick="showSection('products')" class="nav-item w-full text-left px-3 py-2.5 rounded-xl flex items-center gap-2.5 text-gray-600 btn-touch ios-btn" id="nav-products">
+<i class="fas fa-carrot w-4 text-center text-sm"></i><span class="text-sm font-medium">Продукты</span>
+</button>
+<button onclick="showSection('recipes')" class="nav-item w-full text-left px-3 py-2.5 rounded-xl flex items-center gap-2.5 text-gray-600 btn-touch ios-btn" id="nav-recipes">
+<i class="fas fa-utensils w-4 text-center text-sm"></i><span class="text-sm font-medium">Рецепты</span>
+</button>
+<button onclick="showSection('diary')" class="nav-item w-full text-left px-3 py-2.5 rounded-xl flex items-center gap-2.5 text-gray-600 btn-touch ios-btn" id="nav-diary">
+<i class="fas fa-book-open w-4 text-center text-sm"></i><span class="text-sm font-medium">Дневник</span>
+</button>
+<button onclick="showSection('sync')" class="nav-item w-full text-left px-3 py-2.5 rounded-xl flex items-center gap-2.5 text-gray-600 btn-touch ios-btn" id="nav-sync">
+<i class="fas fa-cloud w-4 text-center text-sm"></i><span class="text-sm font-medium">Синхронизация</span>
+</button>
+</nav>
+</div>
+<div class="p-4 lg:p-5 border-t border-gray-200">
+<div class="rounded-xl p-3 text-white" style="background:linear-gradient(135deg,#667eea,#764ba2)">
+<p class="text-xs opacity-90">Сегодня</p>
+<p class="font-bold text-sm" id="today-date"></p>
+</div>
+</div>
+</aside>
+
+<main class="flex-1 p-4 lg:p-6 overflow-y-auto main-fix">
+
+<div id="section-dashboard" class="section active">
+<div class="mb-4">
+<h2 class="text-lg font-bold">Дашборд</h2>
+<p class="text-sm text-gray-500">Обзор питания на сегодня</p>
+</div>
+<div class="grid grid-cols-2 lg:grid-cols-4 gap-2.5 mb-4">
+<div class="glass rounded-2xl p-3.5 border-l-4" style="border-color:#f59e0b">
+<div class="flex justify-between items-start">
+<div>
+<p class="text-xs text-gray-500 mb-0.5">Калории</p>
+<p class="text-lg font-bold" id="dash-cals">0</p>
+<p class="text-xs text-gray-400" id="dash-cals-diff">из 0</p>
+</div>
+<div class="w-7 h-7 rounded-lg flex items-center justify-center shrink-0" style="background:#fef3c7">
+<i class="fas fa-fire text-xs" style="color:#f59e0b"></i>
+</div>
+</div>
+<div class="mt-1.5"><div class="w-full bg-gray-200 rounded-full h-1.5"><div id="bar-cals" class="macro-bar h-1.5 rounded-full" style="background:#f59e0b;width:0%"></div></div></div>
+</div>
+<div class="glass rounded-2xl p-3.5 border-l-4" style="border-color:#3b82f6">
+<div class="flex justify-between items-start">
+<div>
+<p class="text-xs text-gray-500 mb-0.5">Белки</p>
+<p class="text-lg font-bold" id="dash-prot">0</p>
+<p class="text-xs text-gray-400" id="dash-prot-diff">из 0</p>
+</div>
+<div class="w-7 h-7 rounded-lg flex items-center justify-center shrink-0" style="background:#dbeafe">
+<i class="fas fa-drumstick-bite text-xs" style="color:#3b82f6"></i>
+</div>
+</div>
+<div class="mt-1.5"><div class="w-full bg-gray-200 rounded-full h-1.5"><div id="bar-prot" class="macro-bar h-1.5 rounded-full" style="background:#3b82f6;width:0%"></div></div></div>
+</div>
+<div class="glass rounded-2xl p-3.5 border-l-4" style="border-color:#ef4444">
+<div class="flex justify-between items-start">
+<div>
+<p class="text-xs text-gray-500 mb-0.5">Жиры</p>
+<p class="text-lg font-bold" id="dash-fats">0</p>
+<p class="text-xs text-gray-400" id="dash-fats-diff">из 0</p>
+</div>
+<div class="w-7 h-7 rounded-lg flex items-center justify-center shrink-0" style="background:#fee2e2">
+<i class="fas fa-cheese text-xs" style="color:#ef4444"></i>
+</div>
+</div>
+<div class="mt-1.5"><div class="w-full bg-gray-200 rounded-full h-1.5"><div id="bar-fats" class="macro-bar h-1.5 rounded-full" style="background:#ef4444;width:0%"></div></div></div>
+</div>
+<div class="glass rounded-2xl p-3.5 border-l-4" style="border-color:#10b981">
+<div class="flex justify-between items-start">
+<div>
+<p class="text-xs text-gray-500 mb-0.5">Углеводы</p>
+<p class="text-lg font-bold" id="dash-carbs">0</p>
+<p class="text-xs text-gray-400" id="dash-carbs-diff">из 0</p>
+</div>
+<div class="w-7 h-7 rounded-lg flex items-center justify-center shrink-0" style="background:#d1fae5">
+<i class="fas fa-bread-slice text-xs" style="color:#10b981"></i>
+</div>
+</div>
+<div class="mt-1.5"><div class="w-full bg-gray-200 rounded-full h-1.5"><div id="bar-carbs" class="macro-bar h-1.5 rounded-full" style="background:#10b981;width:0%"></div></div></div>
+</div>
+</div>
+<div class="grid grid-cols-1 lg:grid-cols-2 gap-3">
+<div class="glass rounded-2xl p-4">
+<h3 class="font-bold text-sm mb-2">Распределение КБЖУ</h3>
+<div class="flex items-center justify-center" style="height:180px;position:relative">
+<svg class="progress-ring" width="160" height="160">
+<circle cx="80" cy="80" r="64" fill="none" stroke="#e5e7eb" stroke-width="16"></circle>
+<circle id="ring-prot" cx="80" cy="80" r="64" fill="none" stroke="#3b82f6" stroke-width="16" stroke-linecap="round" stroke-dasharray="402" stroke-dashoffset="402"></circle>
+<circle id="ring-fats" cx="80" cy="80" r="48" fill="none" stroke="#ef4444" stroke-width="16" stroke-linecap="round" stroke-dasharray="301" stroke-dashoffset="301"></circle>
+<circle id="ring-carbs" cx="80" cy="80" r="32" fill="none" stroke="#10b981" stroke-width="16" stroke-linecap="round" stroke-dasharray="201" stroke-dashoffset="201"></circle>
+</svg>
+<div style="position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);text-align:center">
+<p class="text-xl font-bold" id="center-cals">0</p>
+<p class="text-xs text-gray-500">ккал</p>
+</div>
+</div>
+<div class="flex justify-center gap-4 mt-1">
+<div class="flex items-center gap-1"><div class="w-2 h-2 rounded-full" style="background:#3b82f6"></div><span class="text-xs">Белки</span></div>
+<div class="flex items-center gap-1"><div class="w-2 h-2 rounded-full" style="background:#ef4444"></div><span class="text-xs">Жиры</span></div>
+<div class="flex items-center gap-1"><div class="w-2 h-2 rounded-full" style="background:#10b981"></div><span class="text-xs">Углеводы</span></div>
+</div>
+</div>
+<div class="glass rounded-2xl p-4">
+<h3 class="font-bold text-sm mb-2">Отклонение от нормы</h3>
+<div class="space-y-2.5">
+<div>
+<div class="flex justify-between mb-0.5"><span class="text-xs font-medium">Калории</span><span class="text-xs" id="dev-cals">0%</span></div>
+<div class="w-full bg-gray-200 rounded-full h-1.5"><div id="dev-bar-cals" class="macro-bar h-1.5 rounded-full" style="width:0%"></div></div>
+<p class="text-xs text-gray-500 mt-0.5" id="dev-text-cals">Норма выполнена</p>
+</div>
+<div>
+<div class="flex justify-between mb-0.5"><span class="text-xs font-medium">Белки</span><span class="text-xs" id="dev-prot">0%</span></div>
+<div class="w-full bg-gray-200 rounded-full h-1.5"><div id="dev-bar-prot" class="macro-bar h-1.5 rounded-full" style="background:#3b82f6;width:0%"></div></div>
+<p class="text-xs text-gray-500 mt-0.5" id="dev-text-prot">Норма выполнена</p>
+</div>
+<div>
+<div class="flex justify-between mb-0.5"><span class="text-xs font-medium">Жиры</span><span class="text-xs" id="dev-fats">0%</span></div>
+<div class="w-full bg-gray-200 rounded-full h-1.5"><div id="dev-bar-fats" class="macro-bar h-1.5 rounded-full" style="background:#ef4444;width:0%"></div></div>
+<p class="text-xs text-gray-500 mt-0.5" id="dev-text-fats">Норма выполнена</p>
+</div>
+<div>
+<div class="flex justify-between mb-0.5"><span class="text-xs font-medium">Углеводы</span><span class="text-xs" id="dev-carbs">0%</span></div>
+<div class="w-full bg-gray-200 rounded-full h-1.5"><div id="dev-bar-carbs" class="macro-bar h-1.5 rounded-full" style="background:#10b981;width:0%"></div></div>
+<p class="text-xs text-gray-500 mt-0.5" id="dev-text-carbs">Норма выполнена</p>
+</div>
+</div>
+</div>
+</div>
+<div class="glass rounded-2xl p-4 mt-3">
+<h3 class="font-bold text-sm mb-2">История за неделю</h3>
+<div class="overflow-x-auto">
+<table class="w-full text-xs">
+<thead><tr class="text-left text-gray-500 border-b"><th class="pb-1.5">Дата</th><th class="pb-1.5">Ккал</th><th class="pb-1.5">Б</th><th class="pb-1.5">Ж</th><th class="pb-1.5">У</th><th class="pb-1.5">Статус</th></tr></thead>
+<tbody id="history-table"></tbody>
+</table>
+</div>
+</div>
+</div>
+
+<div id="section-norm" class="section">
+<div class="mb-4">
+<h2 class="text-lg font-bold">Моя норма КБЖУ</h2>
+<p class="text-sm text-gray-500">Расчет суточной потребности</p>
+</div>
+<div class="grid grid-cols-1 lg:grid-cols-2 gap-3">
+<div class="glass rounded-2xl p-4">
+<h3 class="font-bold text-sm mb-3">Параметры</h3>
+<div class="space-y-3">
+<div>
+<label class="block text-sm font-medium mb-1">Пол</label>
+<div class="flex gap-2">
+<button onclick="setGender('male')" id="gender-male" class="flex-1 py-2.5 rounded-xl border-2 border-blue-500 bg-blue-50 text-blue-700 font-medium btn-touch ios-btn text-sm"><i class="fas fa-mars mr-1"></i>Муж</button>
+<button onclick="setGender('female')" id="gender-female" class="flex-1 py-2.5 rounded-xl border-2 border-gray-200 text-gray-600 btn-touch ios-btn text-sm"><i class="fas fa-venus mr-1"></i>Жен</button>
+</div>
+</div>
+<div class="grid grid-cols-2 gap-2">
+<div><label class="block text-sm font-medium mb-1">Возраст</label><input id="age" type="number" value="30" class="w-full px-3 py-2.5 rounded-xl border border-gray-300 focus:ring-2 focus:ring-purple-500"></div>
+<div><label class="block text-sm font-medium mb-1">Вес, кг</label><input id="weight" type="number" value="70" class="w-full px-3 py-2.5 rounded-xl border border-gray-300 focus:ring-2 focus:ring-purple-500"></div>
+</div>
+<div class="grid grid-cols-2 gap-2">
+<div><label class="block text-sm font-medium mb-1">Рост, см</label><input id="height" type="number" value="175" class="w-full px-3 py-2.5 rounded-xl border border-gray-300 focus:ring-2 focus:ring-purple-500"></div>
+<div><label class="block text-sm font-medium mb-1">Активность</label>
+<select id="activity" class="w-full px-3 py-2.5 rounded-xl border border-gray-300 focus:ring-2 focus:ring-purple-500 bg-white">
+<option value="1.2">Минимальная</option><option value="1.375">Легкая</option><option value="1.55" selected>Умеренная</option><option value="1.725">Высокая</option><option value="1.9">Очень высокая</option>
+</select>
+</div>
+</div>
+<div>
+<label class="block text-sm font-medium mb-1">Режим</label>
+<div class="grid grid-cols-3 gap-2">
+<button onclick="setMode('maintain')" id="mode-maintain" class="py-2.5 rounded-xl border-2 border-purple-500 bg-purple-50 text-purple-700 font-medium btn-touch ios-btn text-xs"><i class="fas fa-balance-scale mr-1"></i>Поддержание</button>
+<button onclick="setMode('cut')" id="mode-cut" class="py-2.5 rounded-xl border-2 border-gray-200 text-gray-600 btn-touch ios-btn text-xs"><i class="fas fa-fire mr-1"></i>Сушка</button>
+<button onclick="setMode('bulk')" id="mode-bulk" class="py-2.5 rounded-xl border-2 border-gray-200 text-gray-600 btn-touch ios-btn text-xs"><i class="fas fa-dumbbell mr-1"></i>Масса</button>
+</div>
+</div>
+<div id="cut-settings" class="hidden space-y-2 p-3 bg-orange-50 rounded-xl border border-orange-200">
+<p class="text-xs font-medium text-orange-700"><i class="fas fa-fire mr-1"></i>Настройки сушки</p>
+<div class="grid grid-cols-2 gap-2">
+<div><label class="block text-xs font-medium mb-1">Дефицит, ккал</label><input id="cut-deficit" type="number" value="500" class="w-full px-3 py-2 rounded-lg border border-orange-300 text-sm"></div>
+<div><label class="block text-xs font-medium mb-1">Белки, г/кг</label><input id="cut-protein" type="number" value="2.2" step="0.1" class="w-full px-3 py-2 rounded-lg border border-orange-300 text-sm"></div>
+</div>
+<div><label class="block text-xs font-medium mb-1">Углеводы, % от остатка</label><input id="cut-carbs" type="number" value="35" class="w-full px-3 py-2 rounded-lg border border-orange-300 text-sm"></div>
+</div>
+<button onclick="calculateNorm()" class="w-full py-3 rounded-xl text-white font-medium btn-touch ios-btn text-sm" style="background:linear-gradient(135deg,#667eea,#764ba2)"><i class="fas fa-calculator mr-2"></i>Рассчитать норму</button>
+</div>
+</div>
+<div class="glass rounded-2xl p-4">
+<h3 class="font-bold text-sm mb-3">Результат</h3>
+<div id="norm-result" class="space-y-3">
+<div class="text-center py-6 text-gray-400">
+<i class="fas fa-chart-line text-3xl mb-2"></i>
+<p class="text-sm">Введите параметры и нажмите «Рассчитать»</p>
+</div>
+</div>
+</div>
+</div>
+</div>
+
+<div id="section-planner" class="section">
+<div class="mb-4">
+<h2 class="text-lg font-bold">Планировщик меню</h2>
+<p class="text-sm text-gray-500">Автоматический подбор рациона на день</p>
+</div>
+<div class="grid grid-cols-1 lg:grid-cols-3 gap-3">
+<div class="lg:col-span-2 space-y-3">
+<div class="glass rounded-2xl p-4">
+<div class="flex justify-between items-center mb-3">
+<h3 class="font-bold text-sm">Сгенерированное меню</h3>
+<div class="flex gap-2">
+<button onclick="generateMenu()" class="px-3 py-2 rounded-xl text-white text-xs font-medium btn-touch ios-btn" style="background:linear-gradient(135deg,#667eea,#764ba2)"><i class="fas fa-sync-alt mr-1"></i>Сгенерировать</button>
+<button onclick="addPlanToDiary()" id="btn-add-plan" class="hidden px-3 py-2 rounded-xl text-white text-xs font-medium btn-touch ios-btn" style="background:#10b981"><i class="fas fa-plus mr-1"></i>В дневник</button>
+</div>
+</div>
+<div id="planner-result" class="space-y-2">
+<div class="text-center py-10 text-gray-400">
+<i class="fas fa-magic text-3xl mb-2"></i>
+<p class="text-sm">Нажмите «Сгенерировать» чтобы составить меню</p>
+</div>
+</div>
+</div>
+</div>
+<div>
+<div class="glass rounded-2xl p-4 sticky top-4">
+<h3 class="font-bold text-xs mb-3">Целевые значения</h3>
+<div class="space-y-3">
+<div class="text-center">
+<div style="position:relative;display:inline-block">
+<svg class="progress-ring" width="90" height="90">
+<circle cx="45" cy="45" r="36" fill="none" stroke="#e5e7eb" stroke-width="7"></circle>
+<circle id="plan-ring" cx="45" cy="45" r="36" fill="none" stroke="#f59e0b" stroke-width="7" stroke-linecap="round" stroke-dasharray="226" stroke-dashoffset="226"></circle>
+</svg>
+<div style="position:absolute;top:50%;left:50%;transform:translate(-50%,-50%)">
+<p class="text-base font-bold" id="plan-cals">0</p>
+</div>
+</div>
+<p class="text-xs text-gray-500 mt-1">из <span id="plan-norm-cals">0</span> ккал</p>
+</div>
+<div class="space-y-1.5">
+<div class="flex justify-between"><span class="text-xs">Белки</span><span class="text-xs font-medium"><span id="plan-prot">0</span> / <span id="plan-norm-prot">0</span> г</span></div>
+<div class="w-full bg-gray-200 rounded-full h-1.5"><div id="plan-bar-prot" class="macro-bar h-1.5 rounded-full" style="background:#3b82f6;width:0%"></div></div>
+<div class="flex justify-between"><span class="text-xs">Жиры</span><span class="text-xs font-medium"><span id="plan-fats">0</span> / <span id="plan-norm-fats">0</span> г</span></div>
+<div class="w-full bg-gray-200 rounded-full h-1.5"><div id="plan-bar-fats" class="macro-bar h-1.5 rounded-full" style="background:#ef4444;width:0%"></div></div>
+<div class="flex justify-between"><span class="text-xs">Углеводы</span><span class="text-xs font-medium"><span id="plan-carbs">0</span> / <span id="plan-norm-carbs">0</span> г</span></div>
+<div class="w-full bg-gray-200 rounded-full h-1.5"><div id="plan-bar-carbs" class="macro-bar h-1.5 rounded-full" style="background:#10b981;width:0%"></div></div>
+</div>
+<div class="mt-2 p-2 bg-gray-50 rounded-lg">
+<p class="text-xs text-gray-600"><i class="fas fa-info-circle mr-1" style="color:#667eea"></i>Завтрак 30%, Обед 35%, Ужин 25%, Перекус 10%</p>
+</div>
+</div>
+</div>
+</div>
+</div>
+</div>
+
+<div id="section-products" class="section">
+<div class="mb-4">
+<h2 class="text-lg font-bold">База продуктов</h2>
+<p class="text-sm text-gray-500">Управление продуктами на 100 г</p>
+</div>
+<div class="glass rounded-2xl p-4 mb-3">
+<h3 class="font-bold text-xs mb-2">Добавить продукт</h3>
+<div class="grid grid-cols-2 md:grid-cols-5 gap-2">
+<input id="prod-name" placeholder="Название" class="col-span-2 md:col-span-2 px-3 py-2.5 rounded-xl border border-gray-300">
+<input id="prod-cals" placeholder="Ккал" type="number" class="px-3 py-2.5 rounded-xl border border-gray-300">
+<input id="prot" placeholder="Белки" type="number" class="px-3 py-2.5 rounded-xl border border-gray-300">
+<input id="prod-fats" placeholder="Жиры" type="number" class="px-3 py-2.5 rounded-xl border border-gray-300">
+<input id="prod-carbs" placeholder="Углеводы" type="number" class="px-3 py-2.5 rounded-xl border border-gray-300">
+<button onclick="addProduct()" class="col-span-2 md:col-span-5 py-2.5 rounded-xl text-white font-medium btn-touch ios-btn text-sm" style="background:linear-gradient(135deg,#667eea,#764ba2)"><i class="fas fa-plus mr-2"></i>Добавить</button>
+</div>
+</div>
+<div class="mb-2"><input oninput="filterProducts(this.value)" placeholder="Поиск продуктов..." class="w-full px-3 py-2.5 rounded-xl border border-gray-300"></div>
+<div id="products-list" class="grid grid-cols-1 md:grid-cols-2 gap-2"></div>
+</div>
+
+<div id="section-recipes" class="section">
+<div class="mb-4">
+<h2 class="text-lg font-bold">Рецепты</h2>
+<p class="text-sm text-gray-500">Создавайте рецепты с пошаговым приготовлением</p>
+</div>
+<div class="grid grid-cols-1 lg:grid-cols-2 gap-3">
+<div class="glass rounded-2xl p-4">
+<h3 class="font-bold text-sm mb-3">Новый рецепт</h3>
+
+<div class="mb-3">
+<label class="block text-xs font-medium mb-1 text-gray-500">Название рецепта</label>
+<input id="recipe-name" placeholder="Например: Куриная грудка с овощами" class="w-full px-3 py-2.5 rounded-xl border border-gray-300 text-sm">
+</div>
+
+<div class="mb-3">
+<label class="block text-xs font-medium mb-1 text-gray-500">Категория</label>
+<select id="recipe-category" class="w-full px-3 py-2.5 rounded-xl border border-gray-300 bg-white text-sm">
+<option value="breakfast">Завтрак</option>
+<option value="lunch">Обед</option>
+<option value="dinner">Ужин</option>
+<option value="snack">Перекус</option>
+<option value="other">Другое</option>
+</select>
+</div>
+
+<div class="mb-3">
+<label class="block text-xs font-medium mb-1 text-gray-500">Вес готовой порции, г</label>
+<input id="recipe-portion" type="number" value="300" class="w-full px-3 py-2.5 rounded-xl border border-gray-300 text-sm">
+</div>
+
+<div class="mb-3 p-3 bg-gray-50 rounded-xl">
+<p class="text-xs font-medium text-gray-700 mb-2">Добавить ингредиент</p>
+<div class="mb-2">
+<label class="block text-xs text-gray-500 mb-0.5">Название продукта</label>
+<input id="ing-name" placeholder="Например: куриная грудка" class="w-full px-3 py-2 rounded-lg border border-gray-300 text-sm">
+</div>
+<div class="grid grid-cols-2 gap-2 mb-2">
+<div>
+<label class="block text-xs text-gray-500 mb-0.5">Вес, г</label>
+<input id="ing-weight" type="number" placeholder="200" class="w-full px-3 py-2 rounded-lg border border-gray-300 text-sm">
+</div>
+<div>
+<label class="block text-xs text-gray-500 mb-0.5">Ккал</label>
+<input id="ing-cals" type="number" placeholder="165" class="w-full px-3 py-2 rounded-lg border border-gray-300 text-sm">
+</div>
+</div>
+<div class="grid grid-cols-3 gap-2 mb-2">
+<div>
+<label class="block text-xs text-gray-500 mb-0.5">Белки, г</label>
+<input id="ing-prot" type="number" placeholder="31" class="w-full px-3 py-2 rounded-lg border border-gray-300 text-sm">
+</div>
+<div>
+<label class="block text-xs text-gray-500 mb-0.5">Жиры, г</label>
+<input id="ing-fats" type="number" placeholder="3.6" class="w-full px-3 py-2 rounded-lg border border-gray-300 text-sm">
+</div>
+<div>
+<label class="block text-xs text-gray-500 mb-0.5">Углеводы, г</label>
+<input id="ing-carbs" type="number" placeholder="0" class="w-full px-3 py-2 rounded-lg border border-gray-300 text-sm">
+</div>
+</div>
+<button onclick="addIngredient()" class="w-full py-2 rounded-lg text-sm font-medium btn-touch ios-btn" style="background:#e0e7ff;color:#4338ca"><i class="fas fa-plus mr-1"></i>Добавить ингредиент</button>
+</div>
+
+<div id="recipe-ingredients" class="space-y-1.5 mb-3"></div>
+
+<div id="recipe-total" class="bg-gradient-to-r rounded-xl p-3 mb-3 text-center" style="background:linear-gradient(135deg,#f3f4f6,#e5e7eb)">
+<div class="grid grid-cols-4 gap-2">
+<div><p class="text-xs text-gray-500">Ккал</p><p class="font-bold text-sm" id="rec-cals">0</p></div>
+<div><p class="text-xs text-gray-500">Белки</p><p class="font-bold text-sm" id="rec-prot">0</p></div>
+<div><p class="text-xs text-gray-500">Жиры</p><p class="font-bold text-sm" id="rec-fats">0</p></div>
+<div><p class="text-xs text-gray-500">Углеводы</p><p class="font-bold text-sm" id="rec-carbs">0</p></div>
+</div>
+<p class="text-xs text-gray-500 mt-1">на <span id="rec-portion">300</span> г порции</p>
+</div>
+
+<div class="mb-3">
+<p class="text-xs font-medium text-gray-700 mb-2">Этапы приготовления</p>
+<div id="recipe-steps" class="mb-2"></div>
+<div class="flex gap-2">
+<input id="step-text" placeholder="Опишите шаг приготовления..." class="flex-1 px-3 py-2.5 rounded-xl border border-gray-300 text-sm">
+<button onclick="addStep()" class="px-4 py-2.5 rounded-xl btn-touch ios-btn" style="background:#f3f4f6"><i class="fas fa-plus"></i></button>
+</div>
+</div>
+
+<button onclick="saveRecipe()" class="w-full py-3 rounded-xl text-white font-medium btn-touch ios-btn text-sm" style="background:linear-gradient(135deg,#667eea,#764ba2)"><i class="fas fa-save mr-2"></i>Сохранить рецепт</button>
+</div>
+
+<div class="glass rounded-2xl p-4">
+<h3 class="font-bold text-sm mb-3">Мои рецепты</h3>
+<div id="recipes-list" class="space-y-2"></div>
+</div>
+</div>
+</div>
+
+<div id="section-diary" class="section">
+<div class="mb-4">
+<h2 class="text-lg font-bold">Дневник питания</h2>
+<p class="text-sm text-gray-500" id="diary-date"></p>
+</div>
+<div class="grid grid-cols-1 lg:grid-cols-3 gap-3">
+<div class="lg:col-span-2">
+<div class="glass rounded-2xl p-4 mb-3">
+<h3 class="font-bold text-xs mb-2">Добавить запись</h3>
+<div class="flex gap-2 flex-wrap">
+<select id="diary-select" class="flex-1 px-3 py-2.5 rounded-xl border border-gray-300 bg-white text-sm min-w-[140px]"></select>
+<input id="diary-weight" placeholder="Вес(г)" type="number" class="w-24 px-3 py-2.5 rounded-xl border border-gray-300 text-sm">
+<select id="diary-meal" class="px-3 py-2.5 rounded-xl border border-gray-300 bg-white text-sm">
+<option value="breakfast">Завтрак</option><option value="lunch">Обед</option><option value="dinner">Ужин</option><option value="snack">Перекус</option>
+</select>
+<button onclick="addToDiary()" class="px-3 py-2.5 rounded-xl text-white btn-touch ios-btn" style="background:linear-gradient(135deg,#667eea,#764ba2)"><i class="fas fa-plus"></i></button>
+</div>
+</div>
+<div class="space-y-2" id="diary-entries"></div>
+</div>
+<div>
+<div class="glass rounded-2xl p-4 sticky top-4">
+<h3 class="font-bold text-xs mb-3">Итого за день</h3>
+<div class="space-y-3">
+<div class="text-center">
+<div style="position:relative;display:inline-block">
+<svg class="progress-ring" width="100" height="100">
+<circle cx="50" cy="50" r="40" fill="none" stroke="#e5e7eb" stroke-width="8"></circle>
+<circle id="diary-ring" cx="50" cy="50" r="40" fill="none" stroke="#f59e0b" stroke-width="8" stroke-linecap="round" stroke-dasharray="251" stroke-dashoffset="251"></circle>
+</svg>
+<div style="position:absolute;top:50%;left:50%;transform:translate(-50%,-50%)">
+<p class="text-base font-bold" id="diary-total-cals">0</p>
+</div>
+</div>
+<p class="text-xs text-gray-500 mt-1">из <span id="diary-norm-cals">0</span> ккал</p>
+</div>
+<div class="space-y-1.5">
+<div class="flex justify-between"><span class="text-xs">Белки</span><span class="text-xs font-medium"><span id="diary-total-prot">0</span> / <span id="diary-norm-prot">0</span> г</span></div>
+<div class="w-full bg-gray-200 rounded-full h-1.5"><div id="diary-bar-prot" class="macro-bar h-1.5 rounded-full" style="background:#3b82f6;width:0%"></div></div>
+<div class="flex justify-between"><span class="text-xs">Жиры</span><span class="text-xs font-medium"><span id="diary-total-fats">0</span> / <span id="diary-norm-fats">0</span> г</span></div>
+<div class="w-full bg-gray-200 rounded-full h-1.5"><div id="diary-bar-fats" class="macro-bar h-1.5 rounded-full" style="background:#ef4444;width:0%"></div></div>
+<div class="flex justify-between"><span class="text-xs">Углеводы</span><span class="text-xs font-medium"><span id="diary-total-carbs">0</span> / <span id="diary-norm-carbs">0</span> г</span></div>
+<div class="w-full bg-gray-200 rounded-full h-1.5"><div id="diary-bar-carbs" class="macro-bar h-1.5 rounded-full" style="background:#10b981;width:0%"></div></div>
+</div>
+</div>
+</div>
+</div>
+</div>
+</div>
+
+<div id="section-sync" class="section">
+<div class="mb-4">
+<h2 class="text-lg font-bold">Синхронизация</h2>
+<p class="text-sm text-gray-500">Перенос данных между устройствами</p>
+</div>
+<div class="grid grid-cols-1 lg:grid-cols-2 gap-3">
+<div class="glass rounded-2xl p-4">
+<h3 class="font-bold text-sm mb-3"><i class="fas fa-download mr-1" style="color:#667eea"></i>Экспорт данных</h3>
+<p class="text-xs text-gray-500 mb-3">Сохраните все рецепты, продукты и дневник в файл. Перешлите файл на другое устройство через Telegram, почту или AirDrop.</p>
+<button onclick="exportData()" class="w-full py-3 rounded-xl text-white font-medium btn-touch ios-btn text-sm" style="background:linear-gradient(135deg,#667eea,#764ba2)"><i class="fas fa-file-export mr-2"></i>Скачать файл данных</button>
+</div>
+<div class="glass rounded-2xl p-4">
+<h3 class="font-bold text-sm mb-3"><i class="fas fa-upload mr-1" style="color:#10b981"></i>Импорт данных</h3>
+<p class="text-xs text-gray-500 mb-3">Загрузите ранее сохранённый файл на этом или другом устройстве. Все данные восстановятся.</p>
+<input type="file" id="import-file" accept=".json" onchange="importData(this)" class="hidden">
+<button onclick="document.getElementById('import-file').click()" class="w-full py-3 rounded-xl text-white font-medium btn-touch ios-btn text-sm" style="background:#10b981"><i class="fas fa-file-import mr-2"></i>Загрузить файл данных</button>
+</div>
+</div>
+<div class="glass rounded-2xl p-4 mt-3">
+<h3 class="font-bold text-sm mb-2"><i class="fas fa-info-circle mr-1" style="color:#667eea"></i>Как синхронизировать</h3>
+<div class="space-y-2 text-xs text-gray-600">
+<p><b>1.</b> Нажмите «Скачать файл данных» на старом устройстве.</p>
+<p><b>2.</b> Перешлите файл через Telegram, WhatsApp, почту или AirDrop на новое устройство.</p>
+<p><b>3.</b> На новом устройстве откройте этот сайт, зайдите в «Синхронизация» и нажмите «Загрузить файл данных».</p>
+<p><b>4.</b> Выберите полученный файл — все рецепты, продукты и записи дневника появятся автоматически.</p>
+</div>
+</div>
+</div>
+
+</main>
+</div>
+</div>
+</div>
+</div>
+
+<script>
+let mode='maintain';
+let currentPlan=null;
+let products=[
+{id:1,name:'Куриная грудка',cals:165,p:31,f:3.6,c:0},
+{id:2,name:'Рис белый',cals:130,p:2.7,f:0.3,c:28},
+{id:3,name:'Овсянка',cals:389,p:16.9,f:6.9,c:66},
+{id:4,name:'Яйцо куриное',cals:155,p:13,f:11,c:1},
+{id:5,name:'Греческий йогурт',cals:59,p:10,f:0.4,c:3.6},
+{id:6,name:'Банан',cals:89,p:1.1,f:0.3,c:23},
+{id:7,name:'Гречка',cals:343,p:13,f:3.4,c:72},
+{id:8,name:'Лосось',cals:208,p:20,f:13,c:0},
+{id:9,name:'Авокадо',cals:160,p:2,f:15,c:9},
+{id:10,name:'Миндаль',cals:579,p:21,f:50,c:22},
+{id:11,name:'Молоко 2.5%',cals:54,p:3,f:2.5,c:4.8},
+{id:12,name:'Творог 5%',cals:120,p:17,f:5,c:3},
+{id:13,name:'Яблоко',cals:52,p:0.3,f:0.2,c:14},
+{id:14,name:'Картофель',cals:77,p:2,f:0.1,c:17},
+{id:15,name:'Макароны',cals:131,p:5,f:1.1,c:25}
+];
+let recipes=[];
+let diary={};
+let norm={cals:2000,prot:100,fats:70,carbs:250};
+let gender='male';
+let currentRecipeIngredients=[];
+let currentRecipeSteps=[];
+
+function init(){
+  loadData();
+  document.getElementById('today-date').textContent=new Date().toLocaleDateString('ru-RU');
+  document.getElementById('diary-date').textContent=new Date().toLocaleDateString('ru-RU',{weekday:'long',day:'numeric',month:'long'});
+  renderProducts();
+  renderRecipes();
+  renderDiary();
+  updateDashboard();
+  updateDiarySelect();
+  updatePlanTargets();
+}
+
+function loadData(){
+  let p=localStorage.getItem('cc_products');
+  let r=localStorage.getItem('cc_recipes');
+  let d=localStorage.getItem('cc_diary');
+  let n=localStorage.getItem('cc_norm');
+  let m=localStorage.getItem('cc_mode');
+  if(p)products=JSON.parse(p);
+  if(r)recipes=JSON.parse(r);
+  if(d)diary=JSON.parse(d);
+  if(n){
+    norm=JSON.parse(n);
+    document.getElementById('norm-result').innerHTML=renderNormResult();
+  }
+  if(m){mode=m;updateModeUI();}
+}
+
+function saveData(){
+  localStorage.setItem('cc_products',JSON.stringify(products));
+  localStorage.setItem('cc_recipes',JSON.stringify(recipes));
+  localStorage.setItem('cc_diary',JSON.stringify(diary));
+  localStorage.setItem('cc_norm',JSON.stringify(norm));
+  localStorage.setItem('cc_mode',mode);
+}
+
+function showSection(id){
+  document.querySelectorAll('.section').forEach(s=>s.classList.remove('active'));
+  document.getElementById('section-'+id).classList.add('active');
+  document.querySelectorAll('.nav-item').forEach(n=>n.classList.remove('active'));
+  document.getElementById('nav-'+id).classList.add('active');
+  if(id==='diary')updateDiarySelect();
+  if(id==='planner')updatePlanTargets();
+  window.scrollTo({top:0,behavior:'smooth'});
+}
+
+function setGender(g){
+  gender=g;
+  document.getElementById('gender-male').className=g==='male'?'flex-1 py-2.5 rounded-xl border-2 border-blue-500 bg-blue-50 text-blue-700 font-medium btn-touch ios-btn text-sm':'flex-1 py-2.5 rounded-xl border-2 border-gray-200 text-gray-600 btn-touch ios-btn text-sm';
+  document.getElementById('gender-female').className=g==='female'?'flex-1 py-2.5 rounded-xl border-2 border-pink-500 bg-pink-50 text-pink-700 font-medium btn-touch ios-btn text-sm':'flex-1 py-2.5 rounded-xl border-2 border-gray-200 text-gray-600 btn-touch ios-btn text-sm';
+}
+
+function setMode(m){
+  mode=m;
+  updateModeUI();
+}
+
+function updateModeUI(){
+  document.getElementById('mode-maintain').className=mode==='maintain'?'py-2.5 rounded-xl border-2 border-purple-500 bg-purple-50 text-purple-700 font-medium btn-touch ios-btn text-xs':'py-2.5 rounded-xl border-2 border-gray-200 text-gray-600 btn-touch ios-btn text-xs';
+  document.getElementById('mode-cut').className=mode==='cut'?'py-2.5 rounded-xl border-2 border-orange-500 bg-orange-50 text-orange-700 font-medium btn-touch ios-btn text-xs':'py-2.5 rounded-xl border-2 border-gray-200 text-gray-600 btn-touch ios-btn text-xs';
+  document.getElementById('mode-bulk').className=mode==='bulk'?'py-2.5 rounded-xl border-2 border-green-500 bg-green-50 text-green-700 font-medium btn-touch ios-btn text-xs':'py-2.5 rounded-xl border-2 border-gray-200 text-gray-600 btn-touch ios-btn text-xs';
+  document.getElementById('cut-settings').classList.toggle('hidden',mode!=='cut');
+}
+
+function calculateNorm(){
+  let age=+document.getElementById('age').value;
+  let weight=+document.getElementById('weight').value;
+  let height=+document.getElementById('height').value;
+  let act=+document.getElementById('activity').value;
+  let bmr=gender==='male'?88.36+(13.4*weight)+(4.8*height)-(5.7*age):447.6+(9.2*weight)+(3.1*height)-(4.3*age);
+  let tdee=Math.round(bmr*act);
+  let total,prot,fats,carbs;
+  if(mode==='maintain'){
+    total=tdee;
+    prot=Math.round(weight*1.8);
+    fats=Math.round(total*0.25/9);
+    carbs=Math.round((total-prot*4-fats*9)/4);
+  }else if(mode==='cut'){
+    let deficit=+document.getElementById('cut-deficit').value||500;
+    let protPerKg=+document.getElementById('cut-protein').value||2.2;
+    let carbsPct=+document.getElementById('cut-carbs').value||35;
+    total=tdee-deficit;
+    prot=Math.round(weight*protPerKg);
+    let remainingCals=total-prot*4;
+    carbs=Math.round((remainingCals*carbsPct/100)/4);
+    fats=Math.round((remainingCals*(100-carbsPct)/100)/9);
+  }else{
+    total=tdee+300;
+    prot=Math.round(weight*2.0);
+    fats=Math.round(total*0.3/9);
+    carbs=Math.round((total-prot*4-fats*9)/4);
+  }
+  norm={cals:total,prot,fats,carbs};
+  saveData();
+  document.getElementById('norm-result').innerHTML=renderNormResult();
+  updateDashboard();
+  updatePlanTargets();
+}
+
+function renderNormResult(){
+  let modeLabel=mode==='maintain'?'Поддержание':mode==='cut'?'Сушка (дефицит)':'Набор массы (сурплюс)';
+  return '<div class="grid grid-cols-2 gap-2">'+
+    '<div class="rounded-xl p-2.5 text-center" style="background:linear-gradient(135deg,#fef3c7,#fde68a)"><p class="text-xl font-bold" style="color:#f59e0b">'+norm.cals+'</p><p class="text-xs">ккал/день</p></div>'+
+    '<div class="rounded-xl p-2.5 text-center" style="background:linear-gradient(135deg,#dbeafe,#bfdbfe)"><p class="text-xl font-bold" style="color:#3b82f6">'+norm.prot+'</p><p class="text-xs">г белков</p></div>'+
+    '<div class="rounded-xl p-2.5 text-center" style="background:linear-gradient(135deg,#fee2e2,#fecaca)"><p class="text-xl font-bold" style="color:#ef4444">'+norm.fats+'</p><p class="text-xs">г жиров</p></div>'+
+    '<div class="rounded-xl p-2.5 text-center" style="background:linear-gradient(135deg,#d1fae5,#a7f3d0)"><p class="text-xl font-bold" style="color:#10b981">'+norm.carbs+'</p><p class="text-xs">г углеводов</p></div>'+
+    '</div>'+
+    '<div class="mt-2 p-2.5 bg-gray-50 rounded-xl"><p class="text-xs text-gray-600"><i class="fas fa-tag mr-1" style="color:#667eea"></i>Режим: <b>'+modeLabel+'</b> &middot; Миффлин-Сан Жеор</p></div>';
+}
+
+function updatePlanTargets(){
+  document.getElementById('plan-norm-cals').textContent=norm.cals;
+  document.getElementById('plan-norm-prot').textContent=norm.prot;
+  document.getElementById('plan-norm-fats').textContent=norm.fats;
+  document.getElementById('plan-norm-carbs').textContent=norm.carbs;
+}
+
+function generateMenu(){
+  if(!products.length&&!recipes.length){alert('Добавьте продукты или рецепты для генерации');return}
+  let pool=[...products.map(p=>({...p,type:'product',orig:p})),...recipes.map(r=>({...r,type:'recipe',orig:r}))];
+  if(!pool.length){alert('Добавьте продукты или рецепты');return}
+  let targets={
+    breakfast:{cals:norm.cals*0.30,prot:norm.prot*0.30,fats:norm.fats*0.25,carbs:norm.carbs*0.35},
+    lunch:{cals:norm.cals*0.35,prot:norm.prot*0.35,fats:norm.fats*0.35,carbs:norm.carbs*0.35},
+    dinner:{cals:norm.cals*0.25,prot:norm.prot*0.25,fats:norm.fats*0.30,carbs:norm.carbs*0.20},
+    snack:{cals:norm.cals*0.10,prot:norm.prot*0.10,fats:norm.fats*0.10,carbs:norm.carbs*0.10}
+  };
+  let plan={breakfast:[],lunch:[],dinner:[],snack:[]};
+  let used=new Set();
+  for(let meal in targets){
+    let t=targets[meal];
+    let remaining={...t};
+    let attempts=0;
+    while((remaining.cals>50||remaining.prot>5)&&attempts<30){
+      attempts++;
+      let candidates=pool.filter(x=>!used.has(x.id+'_'+x.type));
+      if(!candidates.length)break;
+      let best=null,bestScore=Infinity;
+      for(let c of candidates){
+        let score=Math.abs(c.cals-remaining.cals*0.6)+Math.abs(c.p-remaining.prot*0.5)*10;
+        if(score<bestScore){bestScore=score;best=c;}
+      }
+      if(!best)break;
+      let weight=100;
+      if(best.cals>remaining.cals*1.3)weight=Math.round(remaining.cals/best.cals*100);
+      if(weight<30)weight=30;
+      let factor=weight/100;
+      let item={
+        id:best.id,type:best.type,name:best.name,
+        weight:weight,
+        cals:Math.round(best.cals*factor),
+        prot:Math.round(best.p*factor*10)/10,
+        fats:Math.round(best.f*factor*10)/10,
+        carbs:Math.round(best.c*factor*10)/10
+      };
+      if(best.type==='recipe'){
+        item.cals=Math.round(best.cals*factor);
+        item.prot=Math.round(best.prot*factor*10)/10;
+        item.fats=Math.round(best.fats*factor*10)/10;
+        item.carbs=Math.round(best.carbs*factor*10)/10;
+      }
+      plan[meal].push(item);
+      used.add(best.id+'_'+best.type);
+      remaining.cals-=item.cals;
+      remaining.prot-=item.prot;
+      remaining.fats-=item.fats;
+      remaining.carbs-=item.carbs;
+    }
+  }
+  currentPlan=plan;
+  renderPlan(plan);
+  document.getElementById('btn-add-plan').classList.remove('hidden');
+}
+
+function renderPlan(plan){
+  let meals={breakfast:'Завтрак',lunch:'Обед',dinner:'Ужин',snack:'Перекус'};
+  let icons={breakfast:'fa-coffee',lunch:'fa-hamburger',dinner:'fa-utensils',snack:'fa-cookie-bite'};
+  let html='';
+  let total={cals:0,prot:0,fats:0,carbs:0};
+  for(let m in meals){
+    let items=plan[m];
+    let mc=items.reduce((s,i)=>s+i.cals,0);
+    let mp=items.reduce((s,i)=>s+i.prot,0);
+    let mf=items.reduce((s,i)=>s+i.fats,0);
+    let mcb=items.reduce((s,i)=>s+i.carbs,0);
+    total.cals+=mc;total.prot+=mp;total.fats+=mf;total.carbs+=mcb;
+    html+='<div class="glass rounded-2xl p-3.5">'+
+      '<div class="flex items-center gap-2 mb-2"><div class="w-7 h-7 rounded-lg flex items-center justify-center text-white text-xs" style="background:linear-gradient(135deg,#667eea,#764ba2)"><i class="fas '+icons[m]+'"></i></div><h4 class="font-bold text-sm">'+meals[m]+'</h4><span class="text-xs text-gray-500 ml-auto">'+Math.round(mc)+' ккал</span></div>';
+    if(items.length){
+      html+=items.map(it=>'<div class="flex justify-between items-center py-1.5 border-b border-gray-100">'+
+        '<div><p class="text-sm font-medium">'+it.name+'</p><p class="text-xs text-gray-400">'+it.weight+'г</p></div>'+
+        '<div class="text-right"><p class="text-sm font-medium">'+it.cals+' ккал</p><p class="text-xs text-gray-400">Б:'+it.prot+' Ж:'+it.fats+' У:'+it.carbs+'</p></div>'+
+        '</div>').join('');
+    }else{
+      html+='<p class="text-gray-400 text-sm">Нет подходящих блюд</p>';
+    }
+    html+='<div class="mt-1.5 flex gap-2 text-xs text-gray-500"><span>Б: '+Math.round(mp*10)/10+'г</span><span>Ж: '+Math.round(mf*10)/10+'г</span><span>У: '+Math.round(mcb*10)/10+'г</span></div>';
+    html+='</div>';
+  }
+  document.getElementById('planner-result').innerHTML=html;
+  document.getElementById('plan-cals').textContent=Math.round(total.cals);
+  document.getElementById('plan-prot').textContent=Math.round(total.prot);
+  document.getElementById('plan-fats').textContent=Math.round(total.fats);
+  document.getElementById('plan-carbs').textContent=Math.round(total.carbs);
+  let pc=Math.min(total.cals/norm.cals*100,100);
+  let pp=Math.min(total.prot/norm.prot*100,100);
+  let pf=Math.min(total.fats/norm.fats*100,100);
+  let pcb=Math.min(total.carbs/norm.carbs*100,100);
+  document.getElementById('plan-ring').style.strokeDashoffset=226-(226*pc/100);
+  document.getElementById('plan-bar-prot').style.width=pp+'%';
+  document.getElementById('plan-bar-fats').style.width=pf+'%';
+  document.getElementById('plan-bar-carbs').style.width=pcb+'%';
+}
+
+function addPlanToDiary(){
+  if(!currentPlan)return;
+  let today=new Date().toISOString().split('T')[0];
+  if(!diary[today])diary[today]={entries:[]};
+  for(let meal in currentPlan){
+    currentPlan[meal].forEach(item=>{
+      diary[today].entries.push({
+        name:item.name,cals:item.cals,prot:item.prot,fats:item.fats,carbs:item.carbs,
+        meal:meal,weight:item.weight,time:new Date().toLocaleTimeString('ru-RU',{hour:'2-digit',minute:'2-digit'})
+      });
+    });
+  }
+  saveData();
+  renderDiary();
+  updateDashboard();
+  alert('Меню добавлено в дневник!');
+  showSection('diary');
+}
+
+function addProduct(){
+  let name=document.getElementById('prod-name').value.trim();
+  let cals=+document.getElementById('prod-cals').value;
+  let p=+document.getElementById('prot').value;
+  let f=+document.getElementById('prod-fats').value;
+  let c=+document.getElementById('prod-carbs').value;
+  if(!name||!cals){alert('Введите название и калории');return}
+  products.push({id:Date.now(),name,cals,p,f,c});
+  saveData();
+  renderProducts();
+  document.getElementById('prod-name').value='';
+  document.getElementById('prod-cals').value='';
+  document.getElementById('prot').value='';
+  document.getElementById('prod-fats').value='';
+  document.getElementById('prod-carbs').value='';
+  updateDiarySelect();
+}
+
+function renderProducts(list){
+  if(!list)list=products;
+  let html=list.map(pr=>'<div class="glass rounded-xl p-3 flex justify-between items-center">'+
+    '<div class="min-w-0"><p class="font-medium text-sm truncate">'+pr.name+'</p><p class="text-xs text-gray-500">'+pr.cals+' ккал | Б:'+pr.p+' Ж:'+pr.f+' У:'+pr.c+'</p></div>'+
+    '<button onclick="deleteProduct('+pr.id+')" class="text-red-500 hover:text-red-700 p-2 btn-touch shrink-0 ml-2"><i class="fas fa-trash text-sm"></i></button>'+
+    '</div>').join('');
+  document.getElementById('products-list').innerHTML=html||'<p class="text-gray-400 text-center py-6 text-sm">Нет продуктов</p>';
+}
+
+function filterProducts(q){
+  renderProducts(products.filter(p=>p.name.toLowerCase().includes(q.toLowerCase())));
+}
+
+function deleteProduct(id){
+  products=products.filter(p=>p.id!==id);
+  saveData();
+  renderProducts();
+  updateDiarySelect();
+}
+
+function addIngredient(){
+  let name=document.getElementById('ing-name').value.trim();
+  let w=+document.getElementById('ing-weight').value;
+  let cals=+document.getElementById('ing-cals').value;
+  let p=+document.getElementById('ing-prot').value;
+  let f=+document.getElementById('ing-fats').value;
+  let c=+document.getElementById('ing-carbs').value;
+  if(!name||!w){alert('Введите название и вес ингредиента');return}
+  currentRecipeIngredients.push({name,weight:w||0,cals:cals||0,prot:p||0,fats:f||0,carbs:c||0});
+  renderRecipeIngredients();
+  document.getElementById('ing-name').value='';
+  document.getElementById('ing-weight').value='';
+  document.getElementById('ing-cals').value='';
+  document.getElementById('ing-prot').value='';
+  document.getElementById('ing-fats').value='';
+  document.getElementById('ing-carbs').value='';
+}
+
+function renderRecipeIngredients(){
+  let html=currentRecipeIngredients.map((ing,i)=>'<div class="ingredient-row flex justify-between items-center">'+
+    '<div class="min-w-0"><p class="text-sm font-medium">'+ing.name+'</p><p class="text-xs text-gray-500">'+ing.weight+'г &middot; '+ing.cals+' ккал &middot; Б:'+ing.prot+'г Ж:'+ing.fats+'г У:'+ing.carbs+'г</p></div>'+
+    '<button onclick="removeIngredient('+i+')" class="text-red-500 p-1.5 btn-touch shrink-0 ml-2"><i class="fas fa-times text-sm"></i></button>'+
+    '</div>').join('');
+  document.getElementById('recipe-ingredients').innerHTML=html;
+  let portion=+document.getElementById('recipe-portion').value||300;
+  let totalWeight=currentRecipeIngredients.reduce((s,i)=>s+i.weight,0);
+  if(totalWeight===0)totalWeight=portion;
+  let tc=currentRecipeIngredients.reduce((s,i)=>s+i.cals,0);
+  let tp=currentRecipeIngredients.reduce((s,i)=>s+i.prot,0);
+  let tf=currentRecipeIngredients.reduce((s,i)=>s+i.fats,0);
+  let tcb=currentRecipeIngredients.reduce((s,i)=>s+i.carbs,0);
+  let k=portion/totalWeight;
+  document.getElementById('rec-cals').textContent=Math.round(tc*k);
+  document.getElementById('rec-prot').textContent=Math.round(tp*k*10)/10;
+  document.getElementById('rec-fats').textContent=Math.round(tf*k*10)/10;
+  document.getElementById('rec-carbs').textContent=Math.round(tcb*k*10)/10;
+  document.getElementById('rec-portion').textContent=portion;
+}
+
+function removeIngredient(i){
+  currentRecipeIngredients.splice(i,1);
+  renderRecipeIngredients();
+}
+
+function addStep(){
+  let text=document.getElementById('step-text').value.trim();
+  if(!text){alert('Введите описание шага');return}
+  currentRecipeSteps.push(text);
+  renderRecipeSteps();
+  document.getElementById('step-text').value='';
+}
+
+function renderRecipeSteps(){
+  let html=currentRecipeSteps.map((step,i)=>'<div class="recipe-step text-sm text-gray-700" data-step="'+(i+1)+'">'+step+'</div>').join('');
+  document.getElementById('recipe-steps').innerHTML=html;
+}
+
+function removeStep(i){
+  currentRecipeSteps.splice(i,1);
+  renderRecipeSteps();
+}
+
+function saveRecipe(){
+  let name=document.getElementById('recipe-name').value.trim();
+  let category=document.getElementById('recipe-category').value;
+  let portion=+document.getElementById('recipe-portion').value||300;
+  if(!name){alert('Введите название рецепта');return}
+  if(!currentRecipeIngredients.length){alert('Добавьте хотя бы один ингредиент');return}
+  let totalWeight=currentRecipeIngredients.reduce((s,i)=>s+i.weight,0);
+  if(totalWeight===0)totalWeight=portion;
+  let tc=currentRecipeIngredients.reduce((s,i)=>s+i.cals,0);
+  let tp=currentRecipeIngredients.reduce((s,i)=>s+i.prot,0);
+  let tf=currentRecipeIngredients.reduce((s,i)=>s+i.fats,0);
+  let tcb=currentRecipeIngredients.reduce((s,i)=>s+i.carbs,0);
+  let k=portion/totalWeight;
+  let recipe={
+    id:Date.now(),name,category,portion,
+    ingredients:[...currentRecipeIngredients],
+    steps:[...currentRecipeSteps],
+    cals:Math.round(tc*k),prot:Math.round(tp*k*10)/10,fats:Math.round(tf*k*10)/10,carbs:Math.round(tcb*k*10)/10
+  };
+  recipes.push(recipe);
+  let per100k=portion>0?tc*k/portion*100:0;
+  let per100p=portion>0?tp*k/portion*100:0;
+  let per100f=portion>0?tf*k/portion*100:0;
+  let per100c=portion>0?tcb*k/portion*100:0;
+  products.push({id:Date.now()+1,name:name+' (рецепт)',cals:Math.round(per100k),p:Math.round(per100p*10)/10,f:Math.round(per100f*10)/10,c:Math.round(per100c*10)/10});
+  saveData();
+  renderRecipes();
+  renderProducts();
+  currentRecipeIngredients=[];
+  currentRecipeSteps=[];
+  document.getElementById('recipe-name').value='';
+  document.getElementById('recipe-portion').value='300';
+  document.getElementById('recipe-ingredients').innerHTML='';
+  document.getElementById('recipe-steps').innerHTML='';
+  document.getElementById('rec-cals').textContent='0';
+  document.getElementById('rec-prot').textContent='0';
+  document.getElementById('rec-fats').textContent='0';
+  document.getElementById('rec-carbs').textContent='0';
+  updateDiarySelect();
+}
+
+function renderRecipes(){
+  let cats={breakfast:'Завтрак',lunch:'Обед',dinner:'Ужин',snack:'Перекус',other:'Другое'};
+  let catColors={breakfast:'bg-yellow-100 text-yellow-700',lunch:'bg-orange-100 text-orange-700',dinner:'bg-indigo-100 text-indigo-700',snack:'bg-pink-100 text-pink-700',other:'bg-gray-100 text-gray-700'};
+  let html=recipes.map(r=>'<div class="glass rounded-xl p-3">'+
+    '<div class="flex justify-between items-start mb-1.5">'+
+      '<div class="min-w-0">'+
+        '<h4 class="font-bold text-sm truncate">'+r.name+'</h4>'+
+        '<span class="inline-block mt-0.5 px-2 py-0.5 rounded-md text-xs font-medium '+catColors[r.category]+'">'+cats[r.category]+'</span>'+
+      '</div>'+
+      '<button onclick="deleteRecipe('+r.id+')" class="text-red-500 hover:text-red-700 p-1.5 btn-touch shrink-0 ml-2"><i class="fas fa-trash text-sm"></i></button>'+
+    '</div>'+
+    '<p class="text-xs text-gray-500 mb-1">'+r.cals+' ккал | Б:'+r.prot+' Ж:'+r.fats+' У:'+r.carbs+' на '+r.portion+'г</p>'+
+    '<p class="text-xs text-gray-400">'+r.ingredients.length+' ингр. &middot; '+r.steps.length+' шагов</p>'+
+    '</div>').join('');
+  document.getElementById('recipes-list').innerHTML=html||'<p class="text-gray-400 text-center py-6 text-sm">Нет рецептов</p>';
+}
+
+function deleteRecipe(id){
+  let r=recipes.find(x=>x.id===id);
+  if(r){
+    products=products.filter(p=>p.name!==r.name+' (рецепт)');
+  }
+  recipes=recipes.filter(r=>r.id!==id);
+  saveData();
+  renderRecipes();
+  renderProducts();
+  updateDiarySelect();
+}
+
+function updateDiarySelect(){
+  let s=document.getElementById('diary-select');
+  let opts=products.map(p=>'<option value="p_'+p.id+'">'+p.name+'</option>');
+  opts=opts.concat(recipes.map(r=>'<option value="r_'+r.id+'">'+r.name+' (рецепт)</option>'));
+  s.innerHTML=opts.join('');
+}
+
+function addToDiary(){
+  let val=document.getElementById('diary-select').value;
+  let w=+document.getElementById('diary-weight').value;
+  let meal=document.getElementById('diary-meal').value;
+  if(!val||!w){alert('Выберите продукт/рецепт и введите вес');return}
+  let item;
+  if(val.startsWith('p_')){
+    let p=products.find(x=>x.id===+val.split('_')[1]);
+    item={name:p.name,cals:p.cals*w/100,prot:p.p*w/100,fats:p.f*w/100,carbs:p.c*w/100};
+  }else{
+    let r=recipes.find(x=>x.id===+val.split('_')[1]);
+    let k=w/100;
+    item={name:r.name,cals:r.cals*k,prot:r.prot*k,fats:r.fats*k,carbs:r.carbs*k};
+  }
+  let today=new Date().toISOString().split('T')[0];
+  if(!diary[today])diary[today]={entries:[]};
+  diary[today].entries.push({...item,meal,weight:w,time:new Date().toLocaleTimeString('ru-RU',{hour:'2-digit',minute:'2-digit'})});
+  saveData();
+  renderDiary();
+  updateDashboard();
+  document.getElementById('diary-weight').value='';
+}
+
+function renderDiary(){
+  let today=new Date().toISOString().split('T')[0];
+  let day=diary[today]||{entries:[]};
+  let meals={breakfast:'Завтрак',lunch:'Обед',dinner:'Ужин',snack:'Перекус'};
+  let byMeal={};
+  day.entries.forEach(e=>{if(!byMeal[e.meal])byMeal[e.meal]=[];byMeal[e.meal].push(e)});
+  let html='';
+  for(let m in meals){
+    let items=byMeal[m]||[];
+    let mc=items.reduce((s,i)=>s+i.cals,0);
+    html+='<div class="glass rounded-2xl p-3.5">'+
+      '<div class="flex justify-between items-center mb-1.5"><h4 class="font-bold text-sm">'+meals[m]+'</h4><span class="text-xs font-medium">'+Math.round(mc)+' ккал</span></div>';
+    if(items.length){
+      html+=items.map((e,i)=>'<div class="flex justify-between items-center py-1.5 border-b border-gray-100">'+
+        '<div class="min-w-0"><p class="text-sm truncate">'+e.name+' ('+e.weight+'г)</p><p class="text-xs text-gray-400">'+e.time+'</p></div>'+
+        '<div class="text-right shrink-0 ml-2"><p class="text-sm font-medium">'+Math.round(e.cals)+' ккал</p><p class="text-xs text-gray-400">Б:'+Math.round(e.prot)+' Ж:'+Math.round(e.fats)+' У:'+Math.round(e.carbs)+'</p></div>'+
+        '</div>').join('');
+    }else{
+      html+='<p class="text-gray-400 text-sm">Нет записей</p>';
+    }
+    html+='</div>';
+  }
+  document.getElementById('diary-entries').innerHTML=html;
+  let tc=day.entries.reduce((s,e)=>s+e.cals,0);
+  let tp=day.entries.reduce((s,e)=>s+e.prot,0);
+  let tf=day.entries.reduce((s,e)=>s+e.fats,0);
+  let tcb=day.entries.reduce((s,e)=>s+e.carbs,0);
+  document.getElementById('diary-total-cals').textContent=Math.round(tc);
+  document.getElementById('diary-total-prot').textContent=Math.round(tp);
+  document.getElementById('diary-total-fats').textContent=Math.round(tf);
+  document.getElementById('diary-total-carbs').textContent=Math.round(tcb);
+  document.getElementById('diary-norm-cals').textContent=norm.cals;
+  document.getElementById('diary-norm-prot').textContent=norm.prot;
+  document.getElementById('diary-norm-fats').textContent=norm.fats;
+  document.getElementById('diary-norm-carbs').textContent=norm.carbs;
+  let pc=Math.min(tc/norm.cals*100,100);
+  let pp=Math.min(tp/norm.prot*100,100);
+  let pf=Math.min(tf/norm.fats*100,100);
+  let pcb=Math.min(tcb/norm.carbs*100,100);
+  document.getElementById('diary-bar-prot').style.width=pp+'%';
+  document.getElementById('diary-bar-fats').style.width=pf+'%';
+  document.getElementById('diary-bar-carbs').style.width=pcb+'%';
+  document.getElementById('diary-ring').style.strokeDashoffset=251-(251*pc/100);
+}
+
+function updateDashboard(){
+  let today=new Date().toISOString().split('T')[0];
+  let day=diary[today]||{entries:[]};
+  let tc=Math.round(day.entries.reduce((s,e)=>s+e.cals,0));
+  let tp=Math.round(day.entries.reduce((s,e)=>s+e.prot,0));
+  let tf=Math.round(day.entries.reduce((s,e)=>s+e.fats,0));
+  let tcb=Math.round(day.entries.reduce((s,e)=>s+e.carbs,0));
+  document.getElementById('dash-cals').textContent=tc;
+  document.getElementById('dash-prot').textContent=tp;
+  document.getElementById('dash-fats').textContent=tf;
+  document.getElementById('dash-carbs').textContent=tcb;
+  document.getElementById('dash-cals-diff').textContent='из '+norm.cals;
+  document.getElementById('dash-prot-diff').textContent='из '+norm.prot;
+  document.getElementById('dash-fats-diff').textContent='из '+norm.fats;
+  document.getElementById('dash-carbs-diff').textContent='из '+norm.carbs;
+  document.getElementById('center-cals').textContent=tc;
+  document.getElementById('bar-cals').style.width=Math.min(tc/norm.cals*100,100)+'%';
+  document.getElementById('bar-prot').style.width=Math.min(tp/norm.prot*100,100)+'%';
+  document.getElementById('bar-fats').style.width=Math.min(tf/norm.fats*100,100)+'%';
+  document.getElementById('bar-carbs').style.width=Math.min(tcb/norm.carbs*100,100)+'%';
+  let rp=Math.min(tp/norm.prot,1);
+  let rf=Math.min(tf/norm.fats,1);
+  let rc=Math.min(tcb/norm.carbs,1);
+  document.getElementById('ring-prot').style.strokeDashoffset=402-(402*rp);
+  document.getElementById('ring-fats').style.strokeDashoffset=301-(301*rf);
+  document.getElementById('ring-carbs').style.strokeDashoffset=201-(201*rc);
+  let dc=Math.round((tc/norm.cals-1)*100);
+  let dp=Math.round((tp/norm.prot-1)*100);
+  let df=Math.round((tf/norm.fats-1)*100);
+  let dcb=Math.round((tcb/norm.carbs-1)*100);
+  document.getElementById('dev-cals').textContent=(dc>0?'+':'')+dc+'%';
+  document.getElementById('dev-prot').textContent=(dp>0?'+':'')+dp+'%';
+  document.getElementById('dev-fats').textContent=(df>0?'+':'')+df+'%';
+  document.getElementById('dev-carbs').textContent=(dcb>0?'+':'')+dcb+'%';
+  document.getElementById('dev-bar-cals').style.width=Math.min(Math.abs(dc),100)+'%';
+  document.getElementById('dev-bar-cals').style.background=dc>0?'#ef4444':'#10b981';
+  document.getElementById('dev-bar-prot').style.width=Math.min(Math.abs(dp),100)+'%';
+  document.getElementById('dev-bar-prot').style.background=dp>0?'#ef4444':'#10b981';
+  document.getElementById('dev-bar-fats').style.width=Math.min(Math.abs(df),100)+'%';
+  document.getElementById('dev-bar-fats').style.background=df>0?'#ef4444':'#10b981';
+  document.getElementById('dev-bar-carbs').style.width=Math.min(Math.abs(dcb),100)+'%';
+  document.getElementById('dev-bar-carbs').style.background=dcb>0?'#ef4444':'#10b981';
+  document.getElementById('dev-text-cals').textContent=dc>10?'Превышение нормы':dc<-10?'Недобор':'В пределах нормы';
+  document.getElementById('dev-text-prot').textContent=dp>10?'Превышение нормы':dp<-10?'Недобор':'В пределах нормы';
+  document.getElementById('dev-text-fats').textContent=df>10?'Превышение нормы':df<-10?'Недобор':'В пределах нормы';
+  document.getElementById('dev-text-carbs').textContent=dcb>10?'Превышение нормы':dcb<-10?'Недобор':'В пределах нормы';
+  let hist='';
+  let dates=[];
+  for(let i=6;i>=0;i--){
+    let d=new Date();d.setDate(d.getDate()-i);
+    dates.push(d.toISOString().split('T')[0]);
+  }
+  dates.forEach(date=>{
+    let dday=diary[date]||{entries:[]};
+    let c=Math.round(dday.entries.reduce((s,e)=>s+e.cals,0));
+    let p=Math.round(dday.entries.reduce((s,e)=>s+e.prot,0));
+    let f=Math.round(dday.entries.reduce((s,e)=>s+e.fats,0));
+    let cb=Math.round(dday.entries.reduce((s,e)=>s+e.carbs,0));
+    let status=c>norm.cals*1.1?'Превышение':c<norm.cals*0.9?'Недобор':'OK';
+    let statusColor=status==='OK'?'text-green-500':'text-red-500';
+    let d=new Date(date);
+    hist+='<tr class="text-xs"><td class="py-1.5">'+d.toLocaleDateString('ru-RU',{day:'numeric',month:'short'})+'</td><td class="py-1.5">'+c+'</td><td class="py-1.5">'+p+'</td><td class="py-1.5">'+f+'</td><td class="py-1.5">'+cb+'</td><td class="py-1.5 '+statusColor+'">'+status+'</td></tr>';
+  });
+  document.getElementById('history-table').innerHTML=hist;
+}
+
+function exportData(){
+  let data={products,recipes,diary,norm,mode,exportDate:new Date().toISOString()};
+  let blob=new Blob([JSON.stringify(data,null,2)],{type:'application/json'});
+  let url=URL.createObjectURL(blob);
+  let a=document.createElement('a');
+  a.href=url;
+  a.download='kbju-data-'+new Date().toISOString().split('T')[0]+'.json';
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+  URL.revokeObjectURL(url);
+}
+
+function importData(input){
+  let file=input.files[0];
+  if(!file)return;
+  let reader=new FileReader();
+  reader.onload=function(e){
+    try{
+      let data=JSON.parse(e.target.result);
+      if(data.products)products=data.products;
+      if(data.recipes)recipes=data.recipes;
+      if(data.diary)diary=data.diary;
+      if(data.norm)norm=data.norm;
+      if(data.mode){mode=data.mode;updateModeUI();}
+      saveData();
+      renderProducts();
+      renderRecipes();
+      renderDiary();
+      updateDashboard();
+      updateDiarySelect();
+      updatePlanTargets();
+      alert('Данные успешно импортированы!');
+    }catch(err){alert('Ошибка: файл повреждён или неправильный формат');}
+  };
+  reader.readAsText(file);
+  input.value='';
+}
+
+init();
+</script>
+</body>
+</html>
