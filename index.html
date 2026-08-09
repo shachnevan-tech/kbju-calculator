@@ -205,7 +205,6 @@ input[type=number]::-webkit-inner-spin-button,input[type=number]::-webkit-outer-
 </div>
 </div>
 </div>
-
 <div id="section-norm" class="section">
 <div class="mb-4">
 <h2 class="text-lg font-bold">Моя норма КБЖУ</h2>
@@ -447,6 +446,7 @@ input[type=number]::-webkit-inner-spin-button,input[type=number]::-webkit-outer-
 </div>
 </div>
 </div>
+</div>
 
 <div id="section-sync" class="section">
 <div class="mb-4">
@@ -598,9 +598,9 @@ function calculateNorm(){
     fats=Math.round((remainingCals*(100-carbsPct)/100)/9);
   }else{
     total=tdee+300;
-    prot=Math.round(weight*2.0);
-    fats=Math.round(total*0.3/9);
-    carbs=Math.round((total-prot*4-fats*9)/4);
+      prot=Math.round(weight*2.0);
+  fats=Math.round(total*0.3/9);
+  carbs=Math.round((total-prot*4-fats*9)/4);
   }
   norm={cals:total,prot,fats,carbs};
   saveData();
